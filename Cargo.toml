@@ -1,0 +1,12 @@
+[package]
+name = "rust-chess"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chess = "3.2.0"
+clap = { version = "4.5.37", features = ["derive"] }
+clearscreen = "4.0.1"
+colored = "3.0.0"
+dashmap = "6.1.0"
+figlet-rs = "0.1.5"
