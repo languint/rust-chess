@@ -2,7 +2,7 @@ use chess::{Board, BoardStatus, ChessMove, Color, MoveGen};
 
 pub struct Evaluator;
 
-pub type EvaluationResult = (f32, Option<ChessMove>);
+pub type EvaluationResult = (f32, Option<ChessMove>, i32);
 
 impl Evaluator {
     pub fn new() -> Self {
@@ -28,6 +28,7 @@ impl Evaluator {
     pub fn negamax(
         &self,
         board: &Board,
+        mut leaf_counter: i32,
         depth: usize,
         mut alpha: f32,
         beta: f32,
@@ -36,15 +37,20 @@ impl Evaluator {
         // Terminal node or maximum depth reached
         match board.status() {
             BoardStatus::Ongoing if depth > 0 => {}
-            BoardStatus::Stalemate => return (0.0, None),
+            BoardStatus::Stalemate => return (0.0, None, leaf_counter),
             BoardStatus::Checkmate => {
                 let mate_score = f32::NEG_INFINITY;
-                return (mate_score, None);
+                return (mate_score, None, leaf_counter);
             }
             BoardStatus::Ongoing => {
                 // depth == 0
+                leaf_counter += 1;
                 let val = self.heuristic(board);
-                return (if color == Color::White { val } else { -val }, None);
+                return (
+                    if color == Color::White { val } else { -val },
+                    None,
+                    leaf_counter,
+                );
             }
         }
 
@@ -57,8 +63,10 @@ impl Evaluator {
         for mv in moves {
             let new_board = board.make_move_new(mv);
             // Flip color perspective
-            let (score, _) = self.negamax(&new_board, depth - 1, -beta, -alpha, !color);
+            let (score, _, new_leaf_count) =
+                self.negamax(&new_board, leaf_counter, depth - 1, -beta, -alpha, !color);
             let score = -score;
+            leaf_counter = new_leaf_count;
 
             if score > best_score {
                 best_score = score;
@@ -71,6 +79,6 @@ impl Evaluator {
             }
         }
 
-        (best_score, best_move)
+        (best_score, best_move, leaf_counter)
     }
 }

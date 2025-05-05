@@ -1,7 +1,7 @@
 pub const STARTING_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 pub mod util {
-    use colored::{Colorize};
+    use colored::Colorize;
 
     pub fn print_banner() {
         let font = FIGfont::from_file("resources/basic.flf").unwrap();
