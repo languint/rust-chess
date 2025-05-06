@@ -1,4 +1,9 @@
-use chess::{Board, BoardStatus, ChessMove, Color, MoveGen};
+use std::f32::{self};
+
+use chess::{Board, BoardStatus, ChessMove, Color};
+
+use crate::evaluations::material_evaluations::get_color_material_advantage;
+use crate::evaluations::search::order_moves;
 
 pub struct Evaluator;
 
@@ -14,13 +19,9 @@ impl Evaluator {
 
         let mut score = 0.0;
 
+        score += 2.0 * get_color_material_advantage(board);
+
         score
-    }
-
-    pub fn order_moves(&self, board: &Board) -> Vec<ChessMove> {
-        let moves = MoveGen::new_legal(board).collect();
-
-        moves
     }
 
     /// Negamax with alpha-beta pruning.
@@ -39,7 +40,11 @@ impl Evaluator {
             BoardStatus::Ongoing if depth > 0 => {}
             BoardStatus::Stalemate => return (0.0, None, leaf_counter),
             BoardStatus::Checkmate => {
-                let mate_score = f32::NEG_INFINITY;
+                let mate_score = if color == Color::White {
+                    f32::NEG_INFINITY
+                } else {
+                    f32::INFINITY
+                };
                 return (mate_score, None, leaf_counter);
             }
             BoardStatus::Ongoing => {
@@ -58,7 +63,7 @@ impl Evaluator {
         let mut best_move = None;
 
         // Generate and order moves
-        let moves: Vec<ChessMove> = MoveGen::new_legal(board).collect();
+        let moves: Vec<ChessMove> = order_moves(board);
 
         for mv in moves {
             let new_board = board.make_move_new(mv);

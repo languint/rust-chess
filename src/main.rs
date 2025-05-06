@@ -1,14 +1,15 @@
 use crate::util::STARTING_FEN;
-use chess::{Board, BoardStatus, ChessMove, Color, Game, GameResult};
+use chess::{Board, BoardStatus, ChessMove, Game};
+use pgn::print_pgn;
 use std::process::exit;
 use std::str::FromStr;
-use util::util::print_game_result;
 
 use crate::evaluate::Evaluator;
 use crate::util::util::{clear_screen, pretty_print_board, print_banner, print_error, print_label};
 use clap::{Parser, Subcommand};
 
 mod evaluate;
+mod evaluations;
 mod pgn;
 mod util;
 
@@ -70,9 +71,9 @@ fn command(args: Args) -> Result<(), String> {
 
 fn selfplay_loop(game: &mut Game, mut board: Board, depth: usize) -> Result<(), String> {
     let evaluator = Evaluator::new();
-
+    let mut history: Vec<ChessMove> = Vec::new();
     loop {
-        let (_score, best_move, leaf_counter) = evaluator.negamax(
+        let (score, best_move, leaf_counter) = evaluator.negamax(
             &board,
             0,
             depth,
@@ -91,6 +92,8 @@ fn selfplay_loop(game: &mut Game, mut board: Board, depth: usize) -> Result<(), 
 
         game.make_move(mv);
         board = board.make_move_new(mv);
+
+        history.push(mv);
 
         match board.status() {
             BoardStatus::Ongoing => {
@@ -111,9 +114,11 @@ fn selfplay_loop(game: &mut Game, mut board: Board, depth: usize) -> Result<(), 
         clear_screen();
         pretty_print_board(&board, Some(mv));
         print_label("Move", &mv.to_string(), 0);
+        print_label("Score", score.to_string().as_str(), 0);
         print_label("Evaluated Leafs", &leaf_counter.to_string(), 0);
     }
 
     println!("Game is over, engine has no legal moves!");
+    print_pgn(&history, game);
     Ok(())
 }
